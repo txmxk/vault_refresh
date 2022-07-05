@@ -1,0 +1,50 @@
+---
+  - name: clone repo
+    hosts: 192.168.1.232
+    vars:
+      git_clone_base_directory: /var/tmp
+      git_clone_base_prefix: vault-refresh
+      git_branch: main
+    tasks:
+      - name: Timestamp
+        shell: "date +%Y%m%d%H%M"
+        register: dt_out
+      - debug:
+          var: dt_out
+     
+      - name: create directory
+        file:
+          path: "{{ git_clone_base_directory }}/{{ git_clone_base_prefix }}-{{ dt_out.stdout }}"
+          state:  directory
+          owner: econt
+        #become: yes  
+      
+      - name: install git 
+        yum:
+          name: git
+          state: latest
+        register: git_install
+      - debug:
+          var: git_install
+
+      - name: initialize git directory
+        shell:
+          cmd: git init
+          chdir: "{{ git_clone_base_directory }}/{{ git_clone_base_prefix }}-{{ dt_out.stdout }}"
+
+      - name: Clone gitrepo
+        git:
+          #repo: 'https://github.com/txmxk/vault_refresh.git'
+          repo: git@github.com:txmxk/vault_refresh.git
+          dest: "{{ git_clone_base_directory }}/{{ git_clone_base_prefix }}-{{ dt_out.stdout }}"
+          version: "{{ git_branch }}"
+          clone: yes
+        register: git_clone
+      - debug:
+          var: git_clone
+          verbosity: 4
+          #accept_hostkey: yes
+          #version: "{{ git_branch }}"
+          #become: true
+          #update: yes
+          #become_user: econt
